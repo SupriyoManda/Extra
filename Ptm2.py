@@ -23,29 +23,78 @@ USERS = {
 
 # Parent Dashboard
 def parent_dashboard():
+    def search_teacher():
+        query = search_var.get().lower()
+        result_frame.pack_forget()
+        result_frame.pack(pady=10)
+
+        for widget in result_frame.winfo_children():
+            widget.destroy()
+
+        for subject, seating in TEACHER_SEATING.items():
+            if query in subject.lower() or query in seating.lower():
+                tk.Label(result_frame, text=f"{subject}: {seating}", font=("Arial", 12)).pack()
+
     dashboard = tk.Toplevel(root)
     dashboard.title("Parent Dashboard")
-    dashboard.geometry("400x300")
+    dashboard.geometry("400x400")
 
     tk.Label(dashboard, text="Teacher Seating Arrangements", font=("Arial", 14)).pack(pady=10)
 
+    # Search bar
+    search_var = tk.StringVar()
+    search_frame = tk.Frame(dashboard)
+    search_frame.pack(pady=10)
+
+    tk.Entry(search_frame, textvariable=search_var, width=25).pack(side="left", padx=5)
+    tk.Button(search_frame, text="Search", command=search_teacher).pack(side="left")
+
+    # Result frame
+    result_frame = tk.Frame(dashboard)
+    result_frame.pack(pady=10)
+
     for subject, seating in TEACHER_SEATING.items():
-        tk.Label(dashboard, text=f"{subject}: {seating}", font=("Arial", 12)).pack(pady=5)
+        tk.Label(result_frame, text=f"{subject}: {seating}", font=("Arial", 12)).pack()
 
     tk.Button(dashboard, text="Logout", command=dashboard.destroy).pack(pady=20)
 
 
 # Teacher Dashboard
 def teacher_dashboard():
+    def search_student():
+        query = search_var.get().lower()
+        result_frame.pack_forget()
+        result_frame.pack(pady=10)
+
+        for widget in result_frame.winfo_children():
+            widget.destroy()
+
+        for student in STUDENT_DETAILS:
+            if query in student["Name"].lower() or query in student["Class"].lower() or query in student["Roll No"]:
+                details = f"Name: {student['Name']}, Class: {student['Class']}, Roll No: {student['Roll No']}"
+                tk.Label(result_frame, text=details, font=("Arial", 12)).pack()
+
     dashboard = tk.Toplevel(root)
     dashboard.title("Teacher Dashboard")
-    dashboard.geometry("400x300")
+    dashboard.geometry("400x400")
 
     tk.Label(dashboard, text="Student Details", font=("Arial", 14)).pack(pady=10)
 
+    # Search bar
+    search_var = tk.StringVar()
+    search_frame = tk.Frame(dashboard)
+    search_frame.pack(pady=10)
+
+    tk.Entry(search_frame, textvariable=search_var, width=25).pack(side="left", padx=5)
+    tk.Button(search_frame, text="Search", command=search_student).pack(side="left")
+
+    # Result frame
+    result_frame = tk.Frame(dashboard)
+    result_frame.pack(pady=10)
+
     for student in STUDENT_DETAILS:
         details = f"Name: {student['Name']}, Class: {student['Class']}, Roll No: {student['Roll No']}"
-        tk.Label(dashboard, text=details, font=("Arial", 12)).pack(pady=5)
+        tk.Label(result_frame, text=details, font=("Arial", 12)).pack()
 
     tk.Button(dashboard, text="Logout", command=dashboard.destroy).pack(pady=20)
 
