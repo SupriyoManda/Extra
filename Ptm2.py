@@ -59,15 +59,13 @@ def parent_dashboard():
 
     def delete_slot():
         selected_subject = subject_var.get()
-        selected_slot = slot_var.get()
-        for booking in PARENT_BOOKINGS.get(selected_subject, []):
-            if booking[0] == selected_slot:
-                PARENT_BOOKINGS[selected_subject].remove(booking)
-                BOOKED_SLOTS[selected_subject].remove(booking)
-                AVAILABLE_SLOTS[selected_subject].append(selected_slot)
-                messagebox.showinfo("Success", f"Slot '{selected_slot}' for '{selected_subject}' deleted successfully!")
-                return
-        messagebox.showerror("Error", "No such slot found.")
+        if selected_subject in PARENT_BOOKINGS and PARENT_BOOKINGS[selected_subject]:
+            selected_slot, student = PARENT_BOOKINGS[selected_subject].pop()
+            BOOKED_SLOTS[selected_subject].remove((selected_slot, student))
+            AVAILABLE_SLOTS[selected_subject].append(selected_slot)
+            messagebox.showinfo("Success", f"Slot '{selected_slot}' for '{selected_subject}' deleted successfully!")
+        else:
+            messagebox.showerror("Error", "No booked slots available to delete.")
 
     dashboard = tk.Toplevel(root)
     dashboard.title("Parent Dashboard")
@@ -76,8 +74,6 @@ def parent_dashboard():
     tk.Label(dashboard, text="Teacher Seating Arrangements", font=("Arial", 14)).pack(pady=10)
     
     subject_var = tk.StringVar()
-    slot_var = tk.StringVar()
-    
     tk.Label(dashboard, text="Select Subject:").pack()
     tk.OptionMenu(dashboard, subject_var, *TEACHER_SEATING.keys()).pack()
     
