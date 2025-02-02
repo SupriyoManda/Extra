@@ -9,12 +9,6 @@ TEACHER_SEATING = {
     "History": "Table 4",
 }
 
-STUDENT_DETAILS = [
-    {"Name": "John Doe", "Class": "10", "Roll No": "1"},
-    {"Name": "Jane Smith", "Class": "10", "Roll No": "2"},
-    {"Name": "Emily Davis", "Class": "10", "Roll No": "3"},
-]
-
 USERS = {
     "parent": {"username": "parent", "password": "parent123"},
     "teacher": {"username": "teacher", "password": "teacher123"},
@@ -29,40 +23,33 @@ AVAILABLE_SLOTS = {
 }
 
 # Track booked slots
-BOOKED_SLOTS = {subject: [] for subject in AVAILABLE_SLOTS}
-
+BOOKED_SLOTS = {}
+PARENT_BOOKINGS = {}
 
 # Parent Dashboard
 def parent_dashboard():
-    def search_teacher():
-        query = search_var.get().lower()
-        result_frame.pack_forget()
-        result_frame.pack(pady=10)
-
-        for widget in result_frame.winfo_children():
-            widget.destroy()
-
-        for subject, seating in TEACHER_SEATING.items():
-            if query in subject.lower() or query in seating.lower():
-                tk.Label(result_frame, text=f"{subject}: {seating}", font=("Arial", 12)).pack()
-                tk.Button(result_frame, text="Book Slot", command=lambda s=subject: book_slot(s)).pack(pady=5)
-
     def book_slot(subject):
         def confirm_booking():
+            student_name = student_entry.get()
             selected_slot = slot_var.get()
-            if selected_slot in AVAILABLE_SLOTS[subject]:
+            if student_name and selected_slot in AVAILABLE_SLOTS[subject]:
                 AVAILABLE_SLOTS[subject].remove(selected_slot)
-                BOOKED_SLOTS[subject].append(selected_slot)
-                messagebox.showinfo("Success", f"Slot '{selected_slot}' for '{subject}' booked successfully!")
+                BOOKED_SLOTS.setdefault(subject, []).append((selected_slot, student_name))
+                PARENT_BOOKINGS.setdefault(subject, []).append((selected_slot, student_name))
+                messagebox.showinfo("Success", f"Slot '{selected_slot}' for '{subject}' booked successfully for {student_name}!")
                 slot_window.destroy()
             else:
-                messagebox.showerror("Error", "Slot unavailable. Please choose another slot.")
+                messagebox.showerror("Error", "Please enter a student name and select a valid slot.")
 
         slot_window = tk.Toplevel(dashboard)
         slot_window.title(f"Book Slot for {subject}")
-        slot_window.geometry("300x200")
+        slot_window.geometry("300x250")
 
         tk.Label(slot_window, text=f"Available Slots for {subject}", font=("Arial", 14)).pack(pady=10)
+
+        tk.Label(slot_window, text="Student Name:").pack()
+        student_entry = tk.Entry(slot_window)
+        student_entry.pack()
 
         slot_var = tk.StringVar(value=None)
         for slot in AVAILABLE_SLOTS[subject]:
@@ -70,76 +57,60 @@ def parent_dashboard():
 
         tk.Button(slot_window, text="Confirm Booking", command=confirm_booking).pack(pady=10)
 
+    def delete_slot():
+        selected_subject = subject_var.get()
+        selected_slot = slot_var.get()
+        for booking in PARENT_BOOKINGS.get(selected_subject, []):
+            if booking[0] == selected_slot:
+                PARENT_BOOKINGS[selected_subject].remove(booking)
+                BOOKED_SLOTS[selected_subject].remove(booking)
+                AVAILABLE_SLOTS[selected_subject].append(selected_slot)
+                messagebox.showinfo("Success", f"Slot '{selected_slot}' for '{selected_subject}' deleted successfully!")
+                return
+        messagebox.showerror("Error", "No such slot found.")
+
     dashboard = tk.Toplevel(root)
     dashboard.title("Parent Dashboard")
     dashboard.geometry("400x400")
 
     tk.Label(dashboard, text="Teacher Seating Arrangements", font=("Arial", 14)).pack(pady=10)
-
-    # Search bar
-    search_var = tk.StringVar()
-    search_frame = tk.Frame(dashboard)
-    search_frame.pack(pady=10)
-
-    tk.Entry(search_frame, textvariable=search_var, width=25).pack(side="left", padx=5)
-    tk.Button(search_frame, text="Search", command=search_teacher).pack(side="left")
-
-    # Result frame
-    result_frame = tk.Frame(dashboard)
-    result_frame.pack(pady=10)
-
-    for subject, seating in TEACHER_SEATING.items():
-        tk.Label(result_frame, text=f"{subject}: {seating}", font=("Arial", 12)).pack()
-        tk.Button(result_frame, text="Book Slot", command=lambda s=subject: book_slot(s)).pack(pady=5)
+    
+    subject_var = tk.StringVar()
+    slot_var = tk.StringVar()
+    
+    tk.Label(dashboard, text="Select Subject:").pack()
+    tk.OptionMenu(dashboard, subject_var, *TEACHER_SEATING.keys()).pack()
+    
+    tk.Button(dashboard, text="Book Slot", command=lambda: book_slot(subject_var.get())).pack(pady=5)
+    tk.Button(dashboard, text="Delete Slot", command=delete_slot).pack(pady=5)
 
     tk.Button(dashboard, text="Logout", command=dashboard.destroy).pack(pady=20)
-
 
 # Teacher Dashboard
 def teacher_dashboard():
-    def search_student():
-        query = search_var.get().lower()
-        result_frame.pack_forget()
-        result_frame.pack(pady=10)
+    def view_booked_slots():
+        booked_window = tk.Toplevel(dashboard)
+        booked_window.title("Booked Slots")
+        booked_window.geometry("350x400")
+        tk.Label(booked_window, text="Booked Slots", font=("Arial", 14)).pack(pady=10)
 
-        for widget in result_frame.winfo_children():
-            widget.destroy()
-
-        for student in STUDENT_DETAILS:
-            if query in student["Name"].lower() or query in student["Class"].lower() or query in student["Roll No"]:
-                details = f"Name: {student['Name']}, Class: {student['Class']}, Roll No: {student['Roll No']}"
-                tk.Label(result_frame, text=details, font=("Arial", 12)).pack()
-
+        for subject, slots in BOOKED_SLOTS.items():
+            tk.Label(booked_window, text=f"{subject}:", font=("Arial", 12, "bold")).pack()
+            for slot, student in slots:
+                tk.Label(booked_window, text=f"- Time: {slot}, Student: {student}").pack()
+    
     dashboard = tk.Toplevel(root)
     dashboard.title("Teacher Dashboard")
     dashboard.geometry("400x400")
-
-    tk.Label(dashboard, text="Student Details", font=("Arial", 14)).pack(pady=10)
-
-    # Search bar
-    search_var = tk.StringVar()
-    search_frame = tk.Frame(dashboard)
-    search_frame.pack(pady=10)
-
-    tk.Entry(search_frame, textvariable=search_var, width=25).pack(side="left", padx=5)
-    tk.Button(search_frame, text="Search", command=search_student).pack(side="left")
-
-    # Result frame
-    result_frame = tk.Frame(dashboard)
-    result_frame.pack(pady=10)
-
-    for student in STUDENT_DETAILS:
-        details = f"Name: {student['Name']}, Class: {student['Class']}, Roll No: {student['Roll No']}"
-        tk.Label(result_frame, text=details, font=("Arial", 12)).pack()
-
+    
+    tk.Button(dashboard, text="View Booked Slots", command=view_booked_slots).pack(pady=10)
     tk.Button(dashboard, text="Logout", command=dashboard.destroy).pack(pady=20)
-
 
 # Login Validation
 def validate_login():
     username = username_entry.get()
     password = password_entry.get()
-
+    
     if username == USERS["parent"]["username"] and password == USERS["parent"]["password"]:
         messagebox.showinfo("Login Successful", "Welcome, Parent!")
         parent_dashboard()
@@ -148,7 +119,6 @@ def validate_login():
         teacher_dashboard()
     else:
         messagebox.showerror("Login Failed", "Invalid username or password.")
-
 
 # Main Window
 root = tk.Tk()
